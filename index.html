@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plano Semanal</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f0f2f5;
+    padding: 32px 24px;
+    color: #1a1a2e;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #1a1a2e;
+    margin-bottom: 28px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+  }
+
+  .day-col {
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+
+  .day-header {
+    background: #1a1a2e;
+    color: #fff;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    padding: 10px 6px;
+  }
+
+  .blocks {
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .block {
+    border-radius: 7px;
+    padding: 8px 10px;
+    font-size: 11.5px;
+    line-height: 1.4;
+  }
+
+  .block .time {
+    font-size: 10px;
+    font-weight: 600;
+    opacity: 0.65;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .block .label {
+    font-weight: 600;
+  }
+
+  /* Color system — 7 cores apenas */
+  .c-acordar    { background: #f5f5f5; color: #555; border-left: 3px solid #bbb; }
+  .c-exercicio  { background: #e8f5e9; color: #2e7d32; border-left: 3px solid #66bb6a; }
+  .c-trabalho   { background: #e3f2fd; color: #1565c0; border-left: 3px solid #42a5f5; }
+  .c-fatec      { background: #f3e5f5; color: #6a1b9a; border-left: 3px solid #ab47bc; }
+  .c-conteudo   { background: #fff3e0; color: #e65100; border-left: 3px solid #ffa726; }
+  .c-pessoal    { background: #fce4ec; color: #ad1457; border-left: 3px solid #f48fb1; }
+  .c-domestico  { background: #fffde7; color: #f57f17; border-left: 3px solid #ffee58; }
+  .c-descanso   { background: #e0f7fa; color: #00695c; border-left: 3px solid #26c6da; }
+  .c-noite      { background: #ede7f6; color: #4527a0; border-left: 3px solid #9575cd; }
+
+  /* Separador visual entre grupos de horário */
+  .gap {
+    height: 4px;
+    background: transparent;
+  }
+
+  /* Filtro */
+  .filter-bar {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .filter-bar button {
+    padding: 7px 16px;
+    border: 2px solid #1a1a2e;
+    border-radius: 20px;
+    background: transparent;
+    color: #1a1a2e;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .filter-bar button:hover {
+    background: #1a1a2e;
+    color: #fff;
+  }
+
+  .filter-bar button.active {
+    background: #1a1a2e;
+    color: #fff;
+  }
+
+  /* Modo dia único: coluna centralizada e mais larga */
+  .grid.single-day {
+    grid-template-columns: 1fr;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  .grid.single-day .day-col {
+    display: none;
+  }
+
+  .grid.single-day .day-col.visible {
+    display: block;
+  }
+
+  .grid.single-day .block {
+    font-size: 13px;
+    padding: 10px 14px;
+  }
+
+  .grid.single-day .block .time {
+    font-size: 11px;
+  }
+
+  /* ── Responsivo ── */
+
+  /* Tablet: 2–3 colunas */
+  @media (max-width: 1024px) {
+    .grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .grid.single-day {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 700px) {
+    body {
+      padding: 20px 12px;
+    }
+
+    h1 {
+      font-size: 17px;
+      margin-bottom: 18px;
+    }
+
+    /* No mobile a semana vira rolagem horizontal */
+    .grid {
+      grid-template-columns: repeat(6, 80vw);
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      gap: 10px;
+      padding-bottom: 8px;
+    }
+
+    .day-col {
+      scroll-snap-align: start;
+      min-width: 0;
+    }
+
+    /* Modo dia único no mobile: full width */
+    .grid.single-day {
+      grid-template-columns: 1fr;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+
+    .grid.single-day .block {
+      font-size: 13.5px;
+      padding: 11px 14px;
+    }
+
+    .filter-bar {
+      gap: 6px;
+    }
+
+    .filter-bar button {
+      padding: 6px 12px;
+      font-size: 11px;
+    }
+
+    .block {
+      font-size: 12px;
+    }
+
+    .block .time {
+      font-size: 10px;
+    }
+  }
+
+  @media print {
+    body { background: white; padding: 10px; }
+    .day-col { box-shadow: none; border: 1px solid #ddd; }
+    .filter-bar { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<h1>📅 PLANO SEMANAL DEFINITIVO</h1>
+
+<div class="filter-bar">
+  <button class="active" onclick="showAll(this)">Semana completa</button>
+  <button onclick="showDay(this, 'seg')">Segunda</button>
+  <button onclick="showDay(this, 'ter')">Terça</button>
+  <button onclick="showDay(this, 'qua')">Quarta</button>
+  <button onclick="showDay(this, 'qui')">Quinta</button>
+  <button onclick="showDay(this, 'sex')">Sexta</button>
+  <button onclick="showDay(this, 'sab')">Sábado</button>
+</div>
+
+<div class="grid" id="grid">
+
+  <!-- SEGUNDA -->
+  <div class="day-col" data-day="seg">
+    <div class="day-header">SEGUNDA</div>
+    <div class="blocks">
+      <div class="block c-acordar">
+        <span class="time">08:00</span>
+        <span class="label">⏰ Acordar</span>
+      </div>
+      <div class="block c-exercicio">
+        <span class="time">08:30 – 09:30</span>
+        <span class="label">🏋️ Exercício Físico</span>
+      </div>
+      <div class="gap"></div>
+      <div class="block c-trabalho">
+        <span class="time">10:00 – 13:00</span>
+        <span class="label">💻 Bloco Dev RM</span>
+      </div>
+      <div class="block c-descanso">
+        <span class="time">13:00 – 14:30</span>
+        <span class="label">🍽️ Almoço e Descanso</span>
+      </div>
+      <div class="block c-fatec">
+        <span class="time">14:30 – 16:30</span>
+        <span class="label">🎓 Bloco FATEC</span>
+      </div>
+      <div class="block c-conteudo">
+        <span class="time">16:30 – 18:45</span>
+        <span class="label">🎬 Conteúdo — Planejamento</span>
+      </div>
+      <div class="block c-domestico">
+        <span class="time">18:45 – 19:30</span>
+        <span class="label">🧹 Trabalho Doméstico</span>
+      </div>
+      <div class="block c-acordar">
+        <span class="time">19:30 – 20:00</span>
+        <span class="label">✔️ Checklist do Dia</span>
+      </div>
+      <div class="block c-noite">
+        <span class="time">Noite</span>
+        <span class="label">🏫 Aulas FATEC</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TERÇA -->
+  <div class="day-col" data-day="ter">
+    <div class="day-header">TERÇA</div>
+    <div class="blocks">
+      <div class="block c-acordar">
+        <span class="time">08:00</span>
+        <span class="label">⏰ Acordar</span>
+      </div>
+      <div class="block c-exercicio">
+        <span class="time">08:30 – 09:30</span>
+        <span class="label">🏋️ Exercício Físico</span>
+      </div>
+      <div class="gap"></div>
+      <div class="block c-trabalho">
+        <span class="time">10:00 – 13:00</span>
+        <span class="label">💻 Bloco Dev RM</span>
+      </div>
+      <div class="block c-descanso">
+        <span class="time">13:00 – 14:00</span>
+        <span class="label">🍽️ Almoço</span>
+      </div>
+      <div class="block c-conteudo">
+        <span class="time">14:00 – 15:00</span>
+        <span class="label">🎬 Preparação do Set</span>
+      </div>
+      <div class="block c-conteudo" style="background:#ffccbc; color:#bf360c; border-left-color:#ff7043;">
+        <span class="time">15:00 – 18:00</span>
+        <span class="label">🔴 BLOCO DE GRAVAÇÃO</span>
+      </div>
+      <div class="block c-pessoal">
+        <span class="time">18:00 – 19:00</span>
+        <span class="label">🧠 Terapia</span>
+      </div>
+      <div class="block c-domestico">
+        <span class="time">19:00 – 19:45</span>
+        <span class="label">🧹 Trabalho Doméstico</span>
+      </div>
+      <div class="block c-acordar">
+        <span class="time">19:45 – 20:00</span>
+        <span class="label">📥 Fechamento de Arquivos</span>
+      </div>
+      <div class="block c-noite">
+        <span class="time">Noite</span>
+        <span class="label">🏫 Aulas FATEC</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUARTA -->
+  <div class="day-col" data-day="qua">
+    <div class="day-header">QUARTA</div>
+    <div class="blocks">
+      <div class="block c-acordar">
+        <span class="time">08:00</span>
+        <span class="label">⏰ Acordar</span>
+      </div>
+      <div class="block c-exercicio">
+        <span class="time">08:30 – 09:30</span>
+        <span class="label">🏋️ Exercício Físico</span>
+      </div>
+      <div class="gap"></div>
+      <div class="block c-trabalho">
+        <span class="time">10:00 – 13:00</span>
+        <span class="label">💻 Bloco Dev RM</span>
+      </div>
+      <div class="block c-descanso">
+        <span class="time">13:00 – 14:30</span>
+        <span class="label">🍽️ Almoço e Descanso</span>
+      </div>
+      <div class="block c-fatec">
+        <span class="time">14:30 – 16:30</span>
+        <span class="label">🎓 Bloco FATEC</span>
+      </div>
+      <div class="block c-conteudo">
+        <span class="time">16:30 – 18:45</span>
+        <span class="label">🎬 Conteúdo — Edição Bruta</span>
+      </div>
+      <div class="block c-domestico">
+        <span class="time">18:45 – 19:30</span>
+        <span class="label">🧹 Trabalho Doméstico</span>
+      </div>
+      <div class="block c-acordar">
+        <span class="time">19:30 – 20:00</span>
+        <span class="label">✔️ Checklist do Dia</span>
+      </div>
+      <div class="block c-noite">
+        <span class="time">Noite</span>
+        <span class="label">🏫 Aulas FATEC</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUINTA -->
+  <div class="day-col" data-day="qui">
+    <div class="day-header">QUINTA</div>
+    <div class="blocks">
+      <div class="block c-acordar">
+        <span class="time">08:00</span>
+        <span class="label">⏰ Acordar</span>
+      </div>
+      <div class="block c-exercicio">
+        <span class="time">08:30 – 09:30</span>
+        <span class="label">🏋️ Exercício Físico</span>
+      </div>
+      <div class="gap"></div>
+      <div class="block c-trabalho">
+        <span class="time">10:00 – 13:00</span>
+        <span class="label">💻 Bloco Dev RM</span>
+      </div>
+      <div class="block c-descanso">
+        <span class="time">13:00 – 14:30</span>
+        <span class="label">🍽️ Almoço e Descanso</span>
+      </div>
+      <div class="block c-conteudo">
+        <span class="time">14:30 – 18:30</span>
+        <span class="label">👥 Super Bloco Conteúdo<br><small style="font-weight:400">(Com a Gabi)</small></span>
+      </div>
+      <div class="block c-domestico">
+        <span class="time">18:30 – 19:15</span>
+        <span class="label">🧹 Trabalho Doméstico</span>
+      </div>
+      <div class="block c-acordar">
+        <span class="time">19:15 – 20:00</span>
+        <span class="label">☕ Ajustes / Descompressão</span>
+      </div>
+      <div class="block c-noite">
+        <span class="time">Noite</span>
+        <span class="label">🏫 Aulas FATEC</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEXTA -->
+  <div class="day-col" data-day="sex">
+    <div class="day-header">SEXTA</div>
+    <div class="blocks">
+      <div class="block c-acordar">
+        <span class="time">08:00</span>
+        <span class="label">⏰ Acordar</span>
+      </div>
+      <div class="block c-exercicio">
+        <span class="time">08:30 – 09:30</span>
+        <span class="label">🏋️ Exercício Físico</span>
+      </div>
+      <div class="gap"></div>
+      <div class="block c-trabalho">
+        <span class="time">10:00 – 13:00</span>
+        <span class="label">💻 Bloco Dev RM</span>
+      </div>
+      <div class="block c-descanso">
+        <span class="time">13:00 – 14:30</span>
+        <span class="label">🍽️ Almoço e Descanso</span>
+      </div>
+      <div class="block c-fatec">
+        <span class="time">14:30 – 16:30</span>
+        <span class="label">🎓 Bloco FATEC</span>
+      </div>
+      <div class="block c-conteudo">
+        <span class="time">16:30 – 18:45</span>
+        <span class="label">🎬 Conteúdo — Postagem & Tráfego</span>
+      </div>
+      <div class="block c-domestico">
+        <span class="time">18:45 – 19:30</span>
+        <span class="label">🧹 Trabalho Doméstico</span>
+      </div>
+      <div class="block c-acordar">
+        <span class="time">19:30 – 20:00</span>
+        <span class="label">✔️ Checklist do Dia</span>
+      </div>
+      <div class="block c-noite">
+        <span class="time">Noite</span>
+        <span class="label">🏫 Aulas FATEC</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SÁBADO -->
+  <div class="day-col" data-day="sab">
+    <div class="day-header">SÁBADO</div>
+    <div class="blocks">
+      <div class="block c-acordar">
+        <span class="time">08:00 – 09:00</span>
+        <span class="label">⏰ Acordar</span>
+      </div>
+      <div class="block c-fatec">
+        <span class="time">09:00 – 10:30</span>
+        <span class="label">🎓 Bloco FATEC</span>
+      </div>
+      <div class="block c-conteudo">
+        <span class="time">10:30 – 12:00</span>
+        <span class="label">🎬 Conteúdo — Edição & Ajustes Finais</span>
+      </div>
+      <div class="block c-domestico">
+        <span class="time">12:00 – 12:45</span>
+        <span class="label">🧹 Trabalho Doméstico</span>
+      </div>
+      <div class="block c-descanso" style="background:#b2ebf2; color:#006064; border-left-color:#00acc1; padding: 14px 10px;">
+        <span class="time">12:45 →</span>
+        <span class="label">🌊 Almoço & DESCANSO TOTAL</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const grid = document.getElementById('grid');
+  const cols = document.querySelectorAll('.day-col');
+
+  function clearActive() {
+    document.querySelectorAll('.filter-bar button').forEach(b => b.classList.remove('active'));
+  }
+
+  function showAll(btn) {
+    clearActive();
+    btn.classList.add('active');
+    grid.classList.remove('single-day');
+    cols.forEach(c => {
+      c.style.display = '';
+      c.classList.remove('visible');
+    });
+  }
+
+  function showDay(btn, day) {
+    clearActive();
+    btn.classList.add('active');
+    grid.classList.add('single-day');
+    cols.forEach(c => {
+      if (c.dataset.day === day) {
+        c.classList.add('visible');
+      } else {
+        c.classList.remove('visible');
+      }
+    });
+  }
+
+  // Mapa: domingo=0, segunda=1 ... sexta=5, sabado=6
+  const weekdays = [null, 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
+  const today = weekdays[new Date().getDay()];
+
+  // No mobile, abre direto no dia atual
+  if (today && window.innerWidth <= 700) {
+    const todayBtn = [...document.querySelectorAll('.filter-bar button')]
+      .find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(`'${today}'`));
+    if (todayBtn) showDay(todayBtn, today);
+  }
+
+  // Destaca o botão do dia atual com cor laranja (em qualquer tela)
+  if (today) {
+    const btns = document.querySelectorAll('.filter-bar button');
+    btns.forEach(b => {
+      if (b.getAttribute('onclick') && b.getAttribute('onclick').includes(`'${today}'`)) {
+        b.style.setProperty('--today-color', '#e65100');
+        b.style.borderColor = '#e65100';
+        if (!b.classList.contains('active')) b.style.color = '#e65100';
+      }
+    });
+  }
+</script>
+</body>
+</html>
